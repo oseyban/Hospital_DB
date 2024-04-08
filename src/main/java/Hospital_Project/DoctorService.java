@@ -147,65 +147,53 @@ public class DoctorService implements Methods{
     public void findDoctorByTitle() {
         System.out.println("Bulmak Istediginiz Doktorun Unvanini Giriniz:\n\t=> Allergist\n\t=> Norolog\n\t" +
                 "=> Genel Cerrah\n\t=> Cocuk Doktoru\n\t=> Dahiliye Uzmanı\n\t=> Kardiolog");
-        //scan.nextLine();
         String title = scan.nextLine();
 
         String listDoctor = "SELECT * FROM doctors WHERE doctor_title=?";
-        String listTitleQuery = "SELECT doctor_title FROM doctors";
+        String listTitleQuery = "SELECT title FROM unvanlar WHERE title=?";
         boolean isDoctorExist = false;
-        boolean isTitleExist = false;
 
         try {
+            PreparedStatement prst1 = con.prepareStatement(listTitleQuery);
+            prst1.setString(1, title);
+            ResultSet rs1 = prst1.executeQuery();
+
+            if (!rs1.next()) {
+                System.out.println("BÖYLE BİR ÜNVAN BULUNMAMAKTADIR");
+                slowPrint("\033[39mANAMENU'YE YONLENDIRILIYORSUNUZ...\033[0m\n", 20);
+                return;
+            }
+
             PreparedStatement prst = con.prepareStatement(listDoctor);
             prst.setString(1, title);
-            Statement st=con.createStatement();
-            ResultSet rs1=st.executeQuery(listTitleQuery);
-            while (rs1.next()){
-
-                String title1 = rs1.getString("doctor_title");
-                //System.out.println("sonuc="+title1);
-
-                if (title1 != null) {
-                    isTitleExist = true;
-                    isDoctorExist = true;
-                    break;
-                }
-
-            }
-           // prst.executeUpdate();
 
             System.out.println("------------------------------------------------------");
             System.out.println("---------- HASTANEDE BULUNAN DOKTORLARİMİZ -----------");
             System.out.printf("%-13s | %-15s | %-15s | %-15s\n", "DOKTOR ID", "DOKTOR ÜNVAN", "DOKTOR İSİM", "DOKTOR SOYİSİM");
             System.out.println("------------------------------------------------------");
+
             ResultSet rs = prst.executeQuery();
-            while(rs.next()){
+            while (rs.next()) {
                 int id = rs.getInt("doctor_id");
                 String name = rs.getString("doctor_name");
                 String surName = rs.getString("doctor_surname");
                 String title1 = rs.getString("doctor_title");
                 System.out.println( id +" "+title1 + " " + name+ " "+ surName);
                 System.out.printf("%-13s | %-15s | %-15s | %-15s\n", id, title1, name, surName);
-                isDoctorExist = false;
+                isDoctorExist = true;
+            }
+
+            if (!isDoctorExist) {
+                System.out.println("BU UNVANA AİT DOKTOR BULUNMAMAKTADIR");
+                slowPrint("\033[39mANAMENU'YE YONLENDIRILIYORSUNUZ...\033[0m\n", 20);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 
-        if(isTitleExist && isDoctorExist){
-            System.out.println("BÖYLE BİR ÜNVAN BULUNMAMAKTADIR");
-            System.out.println(isTitleExist);
-            System.out.println(isDoctorExist);
-            slowPrint("\033[39mANAMENU'YE YONLENDIRILIYORSUNUZ...\033[0m\n", 20);
-        } else if (!isDoctorExist) {
-            System.out.println("BU UNVANA AİT DOKTOR BULUNMAMAKTADIR");
-            System.out.println("title"+isTitleExist);
-            System.out.println("doctor"+isDoctorExist);
-            slowPrint("\033[39mANAMENU'YE YONLENDIRILIYORSUNUZ...\033[0m\n", 20);
-        }  else
-            System.out.println("------------------------------------------------------");
-
+        System.out.println("------------------------------------------------------");
     }
+
 
     public void list() {
         System.out.println("------------------------------------------------------");
