@@ -196,12 +196,33 @@ public class DoctorService implements Methods{
 
 
     public void list() {
+        String listTitleQuery = "SELECT * FROM doctors";
+
+
+
         System.out.println("------------------------------------------------------");
         System.out.println("---------- HASTANEDE BULUNAN DOKTORLARİMİZ -----------");
-        System.out.printf("%-13s | %-15s | %-15s\n", "DOKTOR İSİM", "DOKTOR SOYİSİM", "DOKTOR UNVAN");
+        System.out.printf("%-13s | %-15s | %-15s | %-15s\n", "DOKTOR ID", "DOKTOR ÜNVAN", "DOKTOR İSİM", "DOKTOR SOYİSİM");
         System.out.println("------------------------------------------------------");
-        for (Doctor w : doctorList) {
-            System.out.printf("%-13s | %-15s | %-15s\n", w.getIsim(), w.getSoyIsim(), w.getUnvan());
+
+
+        try {
+            PreparedStatement prst = con.prepareStatement(listTitleQuery);
+            ResultSet rs = prst.executeQuery();
+            while (rs.next()) {
+                int id = rs.getInt("doctor_id");
+                String name = rs.getString("doctor_name");
+                String surName = rs.getString("doctor_surname");
+                String title1 = rs.getString("doctor_title");
+                System.out.println( id +" "+title1 + " " + name+ " "+ surName);
+                System.out.printf("%-13s | %-15s | %-15s | %-15s\n", id, title1, name, surName);
+                }
+            if (rs==null) {
+                System.out.println("BU UNVANA AİT DOKTOR BULUNMAMAKTADIR");
+                slowPrint("\033[39mANAMENU'YE YONLENDIRILIYORSUNUZ...\033[0m\n", 20);
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
