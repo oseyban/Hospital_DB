@@ -1,9 +1,12 @@
 package Hospital_Project;
 
 import java.io.IOException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.LinkedList;
+import java.util.*;
 
+import static Hospital_Project.DataBankService.con;
 import static Hospital_Project.HospitalService.*;
 
 public class PatientService implements Methods{
@@ -60,78 +63,165 @@ public class PatientService implements Methods{
 
     @Override
     public void add() {
-        System.out.println("Eklemek istediginiz hastanin ADINI giriniz");
+        System.out.println("Eklemek istediğiniz hastanın ADINI giriniz:");
         String hastaAdi = scan.nextLine();
-        System.out.println("Eklemek istediginiz hastanin SOYADINI giriniz");
+
+        System.out.println("Eklemek istediğiniz hastanın SOYADINI giriniz:");
         String hastaSoyadi = scan.nextLine();
-        //      scan.nextLine();
-        int hastaId = patientList.getLast().getHastaID() + 111;
+
         String durum;
-        boolean aciliyet;
+        byte emergency;
+        boolean aciliyet = false;
+
+        List<String> hastaliklar = new ArrayList<>();
+
+        try {
+            String getDiseasesQuery = "SELECT disease FROM diseases";
+            PreparedStatement prst = con.prepareStatement(getDiseasesQuery);
+            ResultSet rs = prst.executeQuery();
+
+            while (rs.next()) {
+                hastaliklar.add(rs.getString("disease"));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Hastalık isimleri alınırken bir hata oluştu.", e);
+        }
+
+            System.out.println("Hastanın Durumunu Girin:");
+            for (String hastalik : hastaliklar) {
+                System.out.println("\t=> " + hastalik);
+            }
+        durum = scan.nextLine();
+
 
         do {
-            System.out.println("Hastanin Durumu:\n\t=> Allerji\n\t=> Bas agrisi\n\t=> Diabet\n\t=> Soguk alginligi\n\t=> Migren\n\t" +
-                    "=> Kalp hastaliklari");
-            durum = scan.nextLine().toLowerCase();
+            System.out.println("Eklemek istediğiniz hastanın aciliyetini belirtin:\n => Acil için: 1\n => Acil Değilse: 0\n");
+            emergency = scan.nextByte();
+            if (emergency == 1) {
+                aciliyet = true;
+            } else if (emergency == 0) {
+                aciliyet = false;
+            } else {
+                System.out.println("Yanlış Aciliyet seçeneği girdiniz...");
+                scan.next();
+            }
+        } while (emergency != 0 && emergency != 1);
 
+        // Hasta bilgilerini veritabanına ekleyin
+        try {
+            String addPatientQuery = "INSERT INTO patients (patient_name, patient_surname, patient_case, isemergency) VALUES (?, ?, ?, ?)";
+            PreparedStatement prst = con.prepareStatement(addPatientQuery);
+            prst.setString(1, hastaAdi);
+            prst.setString(2, hastaSoyadi);
+            prst.setString(3, durum);
+            prst.setBoolean(4, aciliyet);
+            prst.executeUpdate();
 
-        } while (findPatientCase(durum).getActualCase().equalsIgnoreCase("Yanlis Durum"));
-        aciliyet = findPatientCase(durum).isEmergency();
-        Case hastaCase = new Case(durum, aciliyet);
-        Patient patient = new Patient(hastaAdi, hastaSoyadi, hastaId, hastaCase);
-        patientList.add(patient);
-        patientCaseList.add(hastaCase);
-        System.out.println(patient.getIsim() + patient.getSoyIsim() + " isimli hasta sisteme başarıyla eklenmiştir...");
-        list();
+            System.out.println(hastaAdi + " " + hastaSoyadi + " isimli hasta sisteme başarıyla eklenmiştir...");
+            list();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void remove() {
         list();
-        boolean sildiMi = false;
-        System.out.println("Silmek Istediginiz Hastanin Id sini giriniz.");
-        int hastaId = 0;
-        try {
-            hastaId = scan.nextInt();
-            scan.nextLine();
 
-        } catch (Exception e) {
-            System.out.println("GECERSİZ ID");
-            remove();
-        }
-        for (Patient w : patientList) {
-            if (w.getHastaID() == hastaId) {
-                System.out.println(w.getIsim() + " " + w.getSoyIsim() + " isimli hasta sistemden basariyla silinmistir...");
-                sildiMi = true;
-                patientList.remove(w);
+        boolean isDeleted = false;
+        int patientId = 0;
+
+        while (true) {
+            System.out.println("Silmek istediğiniz hastanın ID'sini giriniz:");
+            try {
+                patientId = scan.nextInt();
+                scan.nextLine();
                 break;
+            } catch (InputMismatchException e) {
+                System.out.println("Geçersiz ID. Lütfen bir tam sayı girin.");
+                scan.nextLine();
             }
         }
-        if (!sildiMi) {
-            System.out.println("SİLMEK İSTEDİGİNİZ HASTA LİSTEMİZDE BULUNMAMAKTADIR!");
+
+        try {
+            String deletePatientQuery = "DELETE FROM patients WHERE patient_id = ?";
+            PreparedStatement prst = con.prepareStatement(deletePatientQuery);
+            prst.setInt(1, patientId);
+            int affectedRows = prst.executeUpdate();
+
+            if (affectedRows > 0) {
+                System.out.println("Hasta başarıyla silindi.");
+                isDeleted = true;
+            } else {
+                System.out.println("Silmek istediğiniz hasta bulunamadı.");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Hasta silinirken bir hata oluştu.", e);
         }
-        list();
+
+
+        if (!isDeleted) {
+            System.out.println("Silmek istediğiniz hasta listede bulunamadı.");
+        }
     }
 
-@Override
+
+
+    @Override
     public void list() {
         System.out.println("---------------------------------------------------------------------------");
         System.out.println("----------------------- HASTANEDE BULUNAN HASTALARIMIZ --------------------");
-        System.out.printf("%-10s | %-10s | %-15s | %-20s\n", "HASTA ID", "HASTA ISIM", "HASTA SOYISIM", "HASTA DURUM");
-        System.out.println("---------------------------------------------------------------------------");
-        for (Patient w : patientList) {
-            System.out.printf("%-10s | %-10s | %-15s | %-20s\n", w.getHastaID(), w.getIsim(), w.getSoyIsim(), w.getHastaDurumu(), w.getHastaDurumu().isEmergency());
-        }
+        System.out.printf("%-10s | %-10s | %-15s | %-20s | %-10s\n", "HASTA ID", "HASTA ISIM", "HASTA SOYISIM", "HASTA DURUM", "ACILIYET");
         System.out.println("---------------------------------------------------------------------------");
 
+        try {
+            String listPatientsQuery = "SELECT * FROM patients";
+            PreparedStatement prst = con.prepareStatement(listPatientsQuery);
+            ResultSet rs = prst.executeQuery();
+
+            while (rs.next()) {
+                int hastaID = rs.getInt("patient_id");
+                String hastaAdi = rs.getString("patient_name");
+                String hastaSoyadi = rs.getString("patient_surname");
+                String hastaDurumu = rs.getString("patient_case");
+                boolean aciliyet = rs.getBoolean("isemergency");
+
+                System.out.printf("%-10s | %-10s | %-15s | %-20s | %-10s\n", hastaID, hastaAdi, hastaSoyadi, hastaDurumu, aciliyet);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Hastalar listelenirken bir hata oluştu.", e);
+        }
+
+        System.out.println("---------------------------------------------------------------------------");
     }
 
+
     public void listPatientByCase(String aktuelDurum) {
-        for (Patient w : patientList) {
-            if (w.getHastaDurumu().getActualCase().equalsIgnoreCase(aktuelDurum)) {
-                System.out.printf("%-10s | %-10s | %-15s | %-20s\n", w.getHastaID(), w.getIsim(), w.getSoyIsim(), w.getHastaDurumu(), w.getHastaDurumu().isEmergency());
+        System.out.println("---------------------------------------------------------------------------");
+        System.out.println("-------- " + aktuelDurum.toUpperCase() + " HASTALARIMIZ ---------");
+        System.out.printf("%-10s | %-10s | %-15s | %-20s | %-10s\n", "HASTA ID", "HASTA ISIM", "HASTA SOYISIM", "HASTA DURUM", "ACILIYET");
+        System.out.println("---------------------------------------------------------------------------");
+
+        try {
+            String listPatientsByCaseQuery = "SELECT * FROM patients WHERE patient_case = ?";
+            PreparedStatement prst = con.prepareStatement(listPatientsByCaseQuery);
+            prst.setString(1, aktuelDurum);
+            ResultSet rs = prst.executeQuery();
+
+            while (rs.next()) {
+                int hastaID = rs.getInt("patient_id");
+                String hastaAdi = rs.getString("patient_name");
+                String hastaSoyadi = rs.getString("patient_surname");
+                String hastaDurumu = rs.getString("patient_case");
+                boolean aciliyet = rs.getBoolean("isemergency");
+
+                System.out.printf("%-10s | %-10s | %-15s | %-20s | %-10s\n", hastaID, hastaAdi, hastaSoyadi, hastaDurumu, aciliyet);
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Hastalar belirli bir duruma göre listelenirken bir hata oluştu.", e);
         }
+
+        System.out.println("---------------------------------------------------------------------------");
     }
 
     public Patient findPatient(String aktuelDurum) {

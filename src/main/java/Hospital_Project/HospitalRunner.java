@@ -5,9 +5,12 @@ import java.sql.SQLException;
 import static Hospital_Project.HospitalService.*;
 
 
+
 public class HospitalRunner {
     public static void main(String[] args) throws IOException, InterruptedException, SQLException {
         hospitalService.start();
-
     }
+
 }
+
+

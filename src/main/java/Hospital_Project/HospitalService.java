@@ -161,13 +161,20 @@ public class HospitalService {
 
             Statement st = con.createStatement();
 
-           boolean sql1 = st.execute("CREATE TABLE IF NOT EXISTS doctors(doctor_id SERIAL PRIMARY KEY, doctor_name VARCHAR(50), doctor_surname VARCHAR(50), " +
-                    "doctor_title VARCHAR(50))");
+           boolean sql1 = st.execute("CREATE TABLE IF NOT EXISTS doctors("+
+                   "doctor_id SERIAL PRIMARY KEY,"+
+                   "doctor_name VARCHAR(50)," +
+                   "doctor_surname VARCHAR(50)," +
+                   "doctor_title VARCHAR(50))");
 
             System.out.println(sql1);
 
-            String sql2 = "CREATE TABLE IF NOT EXISTS patients(patient_id SERIAL PRIMARY KEY, patient_name VARCHAR(50), patient_surname VARCHAR(50)," +
-                    "patient_case VARCHAR(50))";
+            String sql2 = "CREATE TABLE IF NOT EXISTS patients(" +
+                    "patient_id SERIAL PRIMARY KEY, " +
+                    "patient_name VARCHAR(50), " +
+                    "patient_surname VARCHAR(50), " +
+                    "patient_case VARCHAR(50), " +
+                    "is_emergency BOOLEAN)";
 
             st.execute(sql2);
 
