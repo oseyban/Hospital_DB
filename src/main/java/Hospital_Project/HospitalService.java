@@ -8,9 +8,12 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Scanner;
+
+import static Hospital_Project.DataBankService.con;
+
 public class HospitalService {
     static Scanner scan = new Scanner(System.in);
-    public static Hospital hospital = new Hospital();
+    //public static Hospital hospital = new Hospital();
     public static HospitalService hospitalService = new HospitalService();
     public static DoctorService doctorService = new DoctorService();
     public static PatientService patientService = new PatientService();
@@ -154,18 +157,16 @@ public class HospitalService {
 
         patientService.createList();
         doctorService.createList();
-        //bağlantı kaç defa oluşturulmalı ve nerelerde?
 
         try {
-            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/hospital_dev02","dev02","123456");
-
+            Connection con = DataBankService.con;//DriverManager.getConnection("jdbc:postgresql://localhost:5432/hospital_dev02","dev02","123456");
             Statement st = con.createStatement();
 
-           boolean sql1 = st.execute("CREATE TABLE IF NOT EXISTS doctors("+
-                   "doctor_id SERIAL PRIMARY KEY,"+
-                   "doctor_name VARCHAR(50)," +
-                   "doctor_surname VARCHAR(50)," +
-                   "doctor_title VARCHAR(50))");
+            boolean sql1 = st.execute("CREATE TABLE IF NOT EXISTS doctors("+
+                    "doctor_id SERIAL PRIMARY KEY,"+
+                    "doctor_name VARCHAR(50)," +
+                    "doctor_surname VARCHAR(50)," +
+                    "doctor_title VARCHAR(50))");
 
             System.out.println(sql1);
 
@@ -183,16 +184,19 @@ public class HospitalService {
 
             st.execute(sql3);
 
-
-
-
-
             st.close();
-            con.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {
+            try {
+                if (con != null) {
+                    con.close();
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException("Bağlantı veya statement kapatılırken bir hata oluştu.", e);
+            }
         }
+
     }
 
 }

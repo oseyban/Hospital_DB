@@ -107,7 +107,6 @@ public class PatientService implements Methods{
             }
         } while (emergency != 0 && emergency != 1);
 
-        // Hasta bilgilerini veritabanına ekleyin
         try {
             String addPatientQuery = "INSERT INTO patients (patient_name, patient_surname, patient_case, isemergency) VALUES (?, ?, ?, ?)";
             PreparedStatement prst = con.prepareStatement(addPatientQuery);
@@ -225,16 +224,21 @@ public class PatientService implements Methods{
     }
 
     public Patient findPatient(String aktuelDurum) {
-        Patient patient = new Patient();
-        for (int i = 0; i < hospital.hastaIsimleri.size(); i++) {
+        Patient patient=new Patient();
+        try {
+            String findPatientQuery = "SELECT * FROM patients WHERE patient_case = ?";
+            PreparedStatement prst = con.prepareStatement(findPatientQuery);
+            prst.setString(1, aktuelDurum);
+            ResultSet rs = prst.executeQuery();
 
-            if (aktuelDurum.equalsIgnoreCase(hospital.durumlar.get(i))) {
-
-                patient.setIsim(hospital.hastaIsimleri.get(i));
-                patient.setSoyIsim(hospital.hastaSoyIsimleri.get(i));
-                patient.setHastaID(hospital.hastaIDleri.get(i));
-                patient.setHastaDurumu(findPatientCase(aktuelDurum));
+            if (rs.next()) {
+                patient.setHastaID(rs.getInt("patient_id"));
+                patient.setIsim(rs.getString("patient_name"));
+                patient.setSoyIsim(rs.getString("patient_surname"));
+                patient.setHastaDurumu(new Case(rs.getString("patient_case"), rs.getBoolean("isemergency")));
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Hasta bulunurken bir hata oluştu.", e);
         }
         return patient;
     }
@@ -265,9 +269,43 @@ public class PatientService implements Methods{
 
     @Override
     public void createList() {
+        try {
+            String getDiseasesQuery = "SELECT disease FROM diseases";
+            PreparedStatement prst = con.prepareStatement(getDiseasesQuery);
+            ResultSet rs = prst.executeQuery();
+
+            while (rs.next()) {
+                String durum = rs.getString("disease");
+
+                // Hastane durumu için hasta ve hasta durumu bul
+                Patient patient = findPatient(durum);
+                Case hastaCase = findPatientCase(durum.toLowerCase());
+
+                // Hastayı ve hasta durumunu veritabanına ekle
+                String addPatientQuery = "INSERT INTO patients (patient_name, patient_surname, patient_case, isemergency) VALUES (?, ?, ?, ?)";
+                PreparedStatement addPatientPrst = con.prepareStatement(addPatientQuery);
+                addPatientPrst.setString(1, patient.getIsim());
+                addPatientPrst.setString(2, patient.getSoyIsim());
+                addPatientPrst.setString(3, hastaCase.getActualCase());
+                addPatientPrst.setBoolean(4, hastaCase.isEmergency());
+                addPatientPrst.executeUpdate();
+
+                // Hastayı ve hasta durumunu listelere ekle
+                patientList.add(patient);
+                patientCaseList.add(hastaCase);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Hastaların listesi oluşturulurken bir hata oluştu.", e);
+        }
+    }
+
+    /*
+    public void createList() {
         for (String w : hospital.durumlar) {
             patientList.add(findPatient(w));
             patientCaseList.add(findPatientCase(w.toLowerCase()));
         }
     }
+
+     */
 }

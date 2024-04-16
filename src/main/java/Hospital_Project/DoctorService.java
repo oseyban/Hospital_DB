@@ -44,9 +44,7 @@ public class DoctorService implements Methods{
                 case 3:
                     System.out.println("BULMAK İSTEDİĞİNİZ HASTANIN DURUMUNU GİRİNİZ...");
                     String durum = scan.nextLine().trim();
-                    //System.out.println(hastaBul(durum));
                     patientService.listPatientByCase(durum);
-                    //o durumda bir hasta yoksa hicbir sey dondurmuyor
                     break;
                 case 4:
                     patientService.list();
@@ -64,7 +62,6 @@ public class DoctorService implements Methods{
 
     @Override
     public void add() {
-        // Doktor Ekleme Metodu
         System.out.println("Eklemek istediginiz doktor ismini giriniz");
         String doktorAdi = scan.nextLine();
         System.out.println("Eklemek istediginiz doktor soy ismini giriniz");
@@ -87,7 +84,6 @@ public class DoctorService implements Methods{
 //        doctorList.add(doctor);
         System.out.println(doktorAdi + " " +doktorSoyadi + " isimli doktor sisteme başarıyla eklenmiştir...");
         list();
-        // Doktor objesini istersek bir listeye ekleyebilir veya başka bir şekilde saklayabiliriz
 
     }
 
@@ -150,7 +146,7 @@ public class DoctorService implements Methods{
         String title = scan.nextLine();
 
         String listDoctor = "SELECT * FROM doctors WHERE doctor_title=?";
-        String listTitleQuery = "SELECT title FROM unvanlar WHERE title=?";
+        String listTitleQuery = "SELECT title FROM titles WHERE title=?";
         boolean isDoctorExist = false;
 
         try {
@@ -227,21 +223,53 @@ public class DoctorService implements Methods{
     }
 
     public Doctor findDoctor(String unvan) {
-        Doctor doctor = new Doctor();
-        for (int i = 0; i < hospital.unvanlar.size(); i++) {
-            if (hospital.unvanlar.get(i).equals(unvan)) {
-                doctor.setIsim(hospital.doctorIsimleri.get(i));
-                doctor.setSoyIsim(hospital.doctorSoyIsimleri.get(i));
-                doctor.setUnvan(hospital.unvanlar.get(i));
-                break;
+        Doctor doctor = null;
+        try {
+            String findDoctorQuery = "SELECT * FROM doctors WHERE doctor_title = ?";
+            PreparedStatement prst = con.prepareStatement(findDoctorQuery);
+            prst.setString(1, unvan);
+            ResultSet rs = prst.executeQuery();
+
+            if (rs.next()) {
+                doctor = new Doctor();
+                doctor.setIsim(rs.getString("doctor_name"));
+                doctor.setSoyIsim(rs.getString("doctor_surname"));
+                doctor.setUnvan(rs.getString("doctor_title"));
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Doktor bulunurken bir hata oluştu.", e);
         }
         return doctor;
     }
 
     public void createList() {
+        try {
+            String getTitlesQuery = "SELECT title FROM titles";
+            PreparedStatement prst = con.prepareStatement(getTitlesQuery);
+            ResultSet rs = prst.executeQuery();
+
+            while (rs.next()) {
+                String unvan = rs.getString("title");
+                Doctor doctor = findDoctor(unvan);
+
+                if (doctor == null) {
+                    System.out.println(unvan + " unvanına sahip bir doktor bulunamadı.");
+                    continue;
+                }
+                doctorList.add(doctor);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Doktor listesi oluşturulurken bir hata oluştu.", e);
+        }
+    }
+
+
+    /*
+    public void createList() {
+
         for (String w : hospital.unvanlar) {
             doctorList.add(findDoctor(w));
         }
     }
+    */
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DataBank {
+     /*
  static protected List<String> doctorIsimleri = new ArrayList<>();
  static protected List<String> doctorSoyIsimleri = new ArrayList<>();
  static protected List<String> unvanlar = new ArrayList<>();
@@ -11,7 +12,7 @@ public class DataBank {
  static protected List<String> hastaSoyIsimleri = new ArrayList<>();
  static protected List<String> durumlar = new ArrayList<>();
  static protected List<Integer> hastaIDleri = new ArrayList<>();
-
+/*
    static {
         // Verilerin başlatılması
         doctorIsimleri.add("Nilson");
@@ -62,7 +63,7 @@ public class DataBank {
         hastaIDleri.add(444);
         hastaIDleri.add(555);
         hastaIDleri.add(666);
-    }
+    }*/
     //interfacede ortak methodları toplamanın avantajları neler? Kod açısından çok farketmedi (azalma yönünden)
     //Interfacedeki metoda exception eklediğimizde childda da eklemelimiyiz yoksa kendiliğinden geliyor mu?
     //static instance block tercihi?
