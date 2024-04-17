@@ -1,16 +1,19 @@
 package Hospital_Project;
 
 import java.io.IOException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import static Hospital_Project.DataBankService.con;
 import static Hospital_Project.HospitalService.*;
 
 
 public class AppointmentService {
-    public TreeMap<String, LinkedList<LocalTime>> haftalikRandevuTable() {
+    public TreeMap<String, LinkedList<LocalTime>> haftalikRandevuTable() throws SQLException {
 
         HashMap<String, LinkedList<LocalTime>> hashHaftalikRandevuTable = new HashMap<>();
 
@@ -31,13 +34,23 @@ public class AppointmentService {
         hashHaftalikRandevuTable.put("5-Cuma", saatler);
 
         LinkedList<String> bolumler = new LinkedList<>();
+        try {
+            String getDepartmentsQuery = "SELECT department_name FROM departments";
+            PreparedStatement prst = con.prepareStatement(getDepartmentsQuery);
+            ResultSet rs = prst.executeQuery();
 
-        bolumler.add("Alerji");
-        bolumler.add("Noroloji");
-        bolumler.add("Genel Cerrahi");
-        bolumler.add("Cocuk Hastaliklari");
-        bolumler.add("Dahiliye");
-        bolumler.add("Kardioloji");
+            while (rs.next()) {
+                String bolum = rs.getString("department_name");
+                bolumler.add(bolum);
+            }
+            prst.close();
+        } catch (SQLException e) {
+            throw new RuntimeException("Bölümler alınırken bir hata oluştu.", e);
+        } finally{
+
+            con.close();
+        }
+
 
         TreeMap<String, LinkedList<LocalTime>> treeHaftalikRandevuTable = new TreeMap<>(hashHaftalikRandevuTable);
         return treeHaftalikRandevuTable;
